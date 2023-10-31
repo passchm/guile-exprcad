@@ -156,6 +156,37 @@ EXPRCAD_DEFINE(exprcad_translate, 4, 0, 0, (SCM x, SCM y, SCM z, SCM shape))
     );
 }
 
+SCM
+exprcad_rotate(const gp_Ax1 &axis, SCM &angle, SCM &shape)
+{
+    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+
+    gp_Trsf transformation;
+    transformation.SetRotation(axis, scm_to_double(angle));
+
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            the_shape.Moved(TopLoc_Location(transformation))
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_rotate_x, 2, 0, 0, (SCM angle, SCM shape))
+{
+    return exprcad_rotate(gp::OX(), angle, shape);
+}
+
+EXPRCAD_DEFINE(exprcad_rotate_y, 2, 0, 0, (SCM angle, SCM shape))
+{
+    return exprcad_rotate(gp::OY(), angle, shape);
+}
+
+EXPRCAD_DEFINE(exprcad_rotate_z, 2, 0, 0, (SCM angle, SCM shape))
+{
+    return exprcad_rotate(gp::OZ(), angle, shape);
+}
+
 EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM shape, SCM filename))
 {
     char *the_filename = scm_to_locale_string(filename);

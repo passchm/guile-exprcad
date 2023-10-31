@@ -51,4 +51,10 @@
 
 (export exprcad-translate)
 
+(export exprcad-rotate-x)
+
+(export exprcad-rotate-y)
+
+(export exprcad-rotate-z)
+
 (export exprcad-export-step)
