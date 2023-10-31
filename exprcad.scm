@@ -21,4 +21,10 @@
 
 (export exprcad-box)
 
+(export exprcad-cone)
+
+(export exprcad-cylinder)
+
+(export exprcad-sphere)
+
 (export exprcad-export-step)

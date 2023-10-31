@@ -25,6 +25,9 @@ extern "C"
 
 
 #include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepPrimAPI_MakeCone.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
+#include <BRepPrimAPI_MakeSphere.hxx>
 
 #include <STEPControl_Writer.hxx>
 
@@ -50,6 +53,45 @@ EXPRCAD_DEFINE(exprcad_box, 3, 0, 0, (SCM size_x, SCM size_y, SCM size_z))
                 scm_to_double(size_x),
                 scm_to_double(size_y),
                 scm_to_double(size_z)
+            )
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_cone, 3, 0, 0, (SCM bottom_radius, SCM top_radius, SCM height))
+{
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            BRepPrimAPI_MakeCone(
+                scm_to_double(bottom_radius),
+                scm_to_double(top_radius),
+                scm_to_double(height)
+            )
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_cylinder, 2, 0, 0, (SCM radius, SCM height))
+{
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            BRepPrimAPI_MakeCylinder(
+                scm_to_double(radius),
+                scm_to_double(height)
+            )
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_sphere, 1, 0, 0, (SCM radius))
+{
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            BRepPrimAPI_MakeSphere(
+                scm_to_double(radius)
             )
         ),
         exprcad_free_shape
