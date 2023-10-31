@@ -1,5 +1,13 @@
 # guile-exprcad
 
+## Building
+
+Install the [`docker.io`](https://packages.debian.org/bookworm/docker.io) package and run the following command:
+
+```
+sudo DOCKER_BUILDKIT=1 docker build --output type=tar,dest=build.tar .
+```
+
 ## License
 
 Copyright 2023 Pascal Schmid
