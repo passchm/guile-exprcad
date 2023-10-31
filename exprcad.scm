@@ -15,7 +15,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with guile-exprcad.  If not, see <https://www.gnu.org/licenses/>.
 
-(define-module (exprcad))
+(define-module (exprcad)
+               #:use-module ((srfi srfi-1) #:select (fold)))
 
 (load-extension "libguile-exprcad" "exprcad_init")
 
@@ -26,6 +27,27 @@
 (export exprcad-cylinder)
 
 (export exprcad-sphere)
+
+(export exprcad-common)
+
+(begin
+  (define* (exprcad-intersection shape #:rest shapes)
+           (fold exprcad-common shape shapes))
+  (export exprcad-intersection))
+
+(export exprcad-cut)
+
+(begin
+  (define* (exprcad-difference shape #:rest shapes)
+           (fold (lambda (x y) (exprcad-cut y x)) shape shapes))
+  (export exprcad-difference))
+
+(export exprcad-fuse)
+
+(begin
+  (define* (exprcad-union shape #:rest shapes)
+           (fold exprcad-fuse shape shapes))
+  (export exprcad-union))
 
 (export exprcad-translate)
 

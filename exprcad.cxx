@@ -29,6 +29,10 @@ extern "C"
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 
+#include <BRepAlgoAPI_Common.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
+
 #include <STEPControl_Writer.hxx>
 
 
@@ -92,6 +96,45 @@ EXPRCAD_DEFINE(exprcad_sphere, 1, 0, 0, (SCM radius))
         new TopoDS_Shape(
             BRepPrimAPI_MakeSphere(
                 scm_to_double(radius)
+            )
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_common, 2, 0, 0, (SCM a, SCM b))
+{
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            BRepAlgoAPI_Common(
+                *static_cast<const TopoDS_Shape *>(scm_to_pointer(a)),
+                *static_cast<const TopoDS_Shape *>(scm_to_pointer(b))
+            )
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_cut, 2, 0, 0, (SCM a, SCM b))
+{
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            BRepAlgoAPI_Cut(
+                *static_cast<const TopoDS_Shape *>(scm_to_pointer(a)),
+                *static_cast<const TopoDS_Shape *>(scm_to_pointer(b))
+            )
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_fuse, 2, 0, 0, (SCM a, SCM b))
+{
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            BRepAlgoAPI_Fuse(
+                *static_cast<const TopoDS_Shape *>(scm_to_pointer(a)),
+                *static_cast<const TopoDS_Shape *>(scm_to_pointer(b))
             )
         ),
         exprcad_free_shape
