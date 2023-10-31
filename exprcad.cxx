@@ -98,6 +98,21 @@ EXPRCAD_DEFINE(exprcad_sphere, 1, 0, 0, (SCM radius))
     );
 }
 
+EXPRCAD_DEFINE(exprcad_translate, 4, 0, 0, (SCM x, SCM y, SCM z, SCM shape))
+{
+    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+
+    gp_Trsf transformation;
+    transformation.SetTranslation(gp_Vec(scm_to_double(x), scm_to_double(y), scm_to_double(z)));
+
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            the_shape.Moved(TopLoc_Location(transformation))
+        ),
+        exprcad_free_shape
+    );
+}
+
 EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM shape, SCM filename))
 {
     char *the_filename = scm_to_locale_string(filename);

@@ -27,4 +27,6 @@
 
 (export exprcad-sphere)
 
+(export exprcad-translate)
+
 (export exprcad-export-step)
