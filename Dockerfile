@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y \
     libocct-data-exchange-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ./CMakeLists.txt ./snarf.cmake ./exprcad.cxx /project/
+COPY ./CMakeLists.txt ./snarf.cmake ./exprcad.cxx ./exprcad.scm /project/
 
 RUN --network=none useradd --system --user-group builder \
     && mkdir /project/build/ \

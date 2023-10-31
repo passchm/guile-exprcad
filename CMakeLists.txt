@@ -72,3 +72,8 @@ pkg_get_variable(GUILE_EXTENSIONDIR guile-3.0 extensiondir)
 string(REGEX REPLACE "^\\/usr\\/" "" GUILE_EXTENSIONDIR "${GUILE_EXTENSIONDIR}")
 
 install(TARGETS guile-exprcad DESTINATION "${GUILE_EXTENSIONDIR}")
+
+pkg_get_variable(GUILE_SITEDIR guile-3.0 sitedir)
+string(REGEX REPLACE "^\\/usr\\/" "" GUILE_SITEDIR "${GUILE_SITEDIR}")
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/exprcad.scm DESTINATION "${GUILE_SITEDIR}")
