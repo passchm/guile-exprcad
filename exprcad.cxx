@@ -29,6 +29,12 @@ extern "C"
 #include <STEPControl_Writer.hxx>
 
 
+#define EXPRCAD_DEFINE(FNAME, REQ, OPT, VAR, ARGLIST) \
+SCM_SNARF_HERE(\
+extern "C" SCM FNAME ARGLIST\
+)
+
+
 extern "C"
 void
 exprcad_free_shape(void *shape)
@@ -36,9 +42,7 @@ exprcad_free_shape(void *shape)
     delete static_cast<TopoDS_Shape *>(shape);
 }
 
-extern "C"
-SCM
-exprcad_box(SCM size_x, SCM size_y, SCM size_z)
+EXPRCAD_DEFINE(exprcad_box, 3, 0, 0, (SCM size_x, SCM size_y, SCM size_z))
 {
     return scm_from_pointer(
         new TopoDS_Shape(
@@ -52,9 +56,7 @@ exprcad_box(SCM size_x, SCM size_y, SCM size_z)
     );
 }
 
-extern "C"
-SCM
-exprcad_export_step(SCM shape, SCM filename)
+EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM shape, SCM filename))
 {
     char *the_filename = scm_to_locale_string(filename);
 
@@ -74,6 +76,7 @@ extern "C"
 void
 exprcad_init()
 {
-    scm_c_define_gsubr("exprcad-box", 3, 0, 0, reinterpret_cast<void *>(exprcad_box));
-    scm_c_define_gsubr("exprcad-export-step", 2, 0, 0, reinterpret_cast<void *>(exprcad_export_step));
+#ifndef SCM_MAGIC_SNARFER
+#include "exprcad_snarf_init.hxx"
+#endif
 }

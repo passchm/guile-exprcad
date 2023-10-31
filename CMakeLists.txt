@@ -23,7 +23,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(guile-exprcad SHARED exprcad.cxx)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/snarf/exprcad_snarf_init.hxx
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/exprcad.cxx
+    COMMAND ${CMAKE_COMMAND}
+        -D SNARF_INPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/exprcad.cxx
+        -D SNARF_OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/snarf/exprcad_snarf_init.hxx
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/snarf.cmake
+    VERBATIM
+)
+
+add_library(guile-exprcad SHARED exprcad.cxx ${CMAKE_CURRENT_BINARY_DIR}/snarf/exprcad_snarf_init.hxx)
+
+target_include_directories(guile-exprcad PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/snarf/)
 
 find_package(PkgConfig REQUIRED)
 
