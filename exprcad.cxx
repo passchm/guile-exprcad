@@ -27,13 +27,21 @@ extern "C"
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
+#include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 
 #include <BRepAlgoAPI_Common.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+
+#include <GC_MakeCircle.hxx>
+
+#include <gp_Pln.hxx>
 
 #include <STEPControl_Writer.hxx>
 
@@ -201,6 +209,54 @@ EXPRCAD_DEFINE(exprcad_scale_uniformly, 2, 0, 0, (SCM factor, SCM shape))
     return scm_from_pointer(
         new TopoDS_Shape(
             builder.Shape()
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_rectangle, 2, 0, 0, (SCM size_x, SCM size_y))
+{
+    const double s_x = scm_to_double(size_x);
+    const double s_y = scm_to_double(size_y);
+
+    const gp_Pln plane;
+    const BRepBuilderAPI_MakeFace face_builder(plane, -0.5 * s_x, 0.5 * s_x, -0.5 * s_y, 0.5 * s_y);
+
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            face_builder.Face()
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_disc, 1, 0, 0, (SCM radius))
+{
+    GC_MakeCircle circle_builder(gp::OZ(), scm_to_double(radius));
+
+    BRepBuilderAPI_MakeEdge edge_builder(circle_builder.Value());
+
+    BRepBuilderAPI_MakeWire wire_builder(edge_builder.Edge());
+
+    const BRepBuilderAPI_MakeFace face_builder(wire_builder.Wire());
+
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            face_builder.Face()
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_extrude, 2, 0, 0, (SCM size_z, SCM shape))
+{
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            BRepPrimAPI_MakePrism(
+                *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape)),
+                gp_Vec(0, 0, scm_to_double(size_z)),
+                true
+            )
         ),
         exprcad_free_shape
     );

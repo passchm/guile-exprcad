@@ -59,4 +59,10 @@
 
 (export exprcad-scale-uniformly)
 
+(export exprcad-rectangle)
+
+(export exprcad-disc)
+
+(export exprcad-extrude)
+
 (export exprcad-export-step)
