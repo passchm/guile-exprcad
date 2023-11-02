@@ -33,6 +33,8 @@ extern "C"
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 
+#include <BRepBuilderAPI_Transform.hxx>
+
 #include <STEPControl_Writer.hxx>
 
 
@@ -185,6 +187,23 @@ EXPRCAD_DEFINE(exprcad_rotate_y, 2, 0, 0, (SCM angle, SCM shape))
 EXPRCAD_DEFINE(exprcad_rotate_z, 2, 0, 0, (SCM angle, SCM shape))
 {
     return exprcad_rotate(gp::OZ(), angle, shape);
+}
+
+EXPRCAD_DEFINE(exprcad_scale_uniformly, 2, 0, 0, (SCM factor, SCM shape))
+{
+    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+
+    gp_Trsf transformation;
+    transformation.SetScaleFactor(scm_to_double(factor));
+
+    BRepBuilderAPI_Transform builder(the_shape, transformation, true);
+
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            builder.Shape()
+        ),
+        exprcad_free_shape
+    );
 }
 
 EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM shape, SCM filename))

@@ -57,4 +57,6 @@
 
 (export exprcad-rotate-z)
 
+(export exprcad-scale-uniformly)
+
 (export exprcad-export-step)
