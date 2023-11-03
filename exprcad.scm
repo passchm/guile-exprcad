@@ -61,6 +61,8 @@
 
 (export exprcad-rectangle)
 
+(export exprcad-rounded-rectangle)
+
 (export exprcad-disc)
 
 (export exprcad-extrude)

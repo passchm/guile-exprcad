@@ -39,11 +39,15 @@ extern "C"
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 
+#include <BRepFilletAPI_MakeFillet2d.hxx>
+
 #include <GC_MakeCircle.hxx>
 
 #include <gp_Pln.hxx>
 
 #include <STEPControl_Writer.hxx>
+
+#include <TopExp_Explorer.hxx>
 
 
 #define EXPRCAD_DEFINE(FNAME, REQ, OPT, VAR, ARGLIST) \
@@ -225,6 +229,51 @@ EXPRCAD_DEFINE(exprcad_rectangle, 2, 0, 0, (SCM size_x, SCM size_y))
     return scm_from_pointer(
         new TopoDS_Shape(
             face_builder.Face()
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_rounded_rectangle, 3, 0, 0, (SCM size_x, SCM size_y, SCM radius))
+{
+    const double s_x = scm_to_double(size_x);
+    const double s_y = scm_to_double(size_y);
+
+    const gp_Pln plane;
+    const BRepBuilderAPI_MakeFace face_builder(plane, -0.5 * s_x, 0.5 * s_x, -0.5 * s_y, 0.5 * s_y);
+
+    BRepFilletAPI_MakeFillet2d fillet_builder(face_builder.Face());
+
+    const double r = scm_to_double(radius);
+
+    bool points[4] = { false };
+
+    for (TopExp_Explorer exp(face_builder.Face(), TopAbs_VERTEX); exp.More(); exp.Next()) {
+        const TopoDS_Vertex &vertex = TopoDS::Vertex(exp.Current());
+
+        const gp_Pnt pnt = BRep_Tool::Pnt(vertex);
+
+        if (!points[0] && (pnt.X() < 0) && (pnt.Y() < 0)) {
+            points[0] = true;
+            fillet_builder.AddFillet(vertex, r);
+        }
+        else if (!points[1] && (pnt.X() < 0) && (pnt.Y() > 0)) {
+            points[1] = true;
+            fillet_builder.AddFillet(vertex, r);
+        }
+        else if (!points[2] && (pnt.X() > 0) && (pnt.Y() < 0)) {
+            points[2] = true;
+            fillet_builder.AddFillet(vertex, r);
+        }
+        else if (!points[3] && (pnt.X() > 0) && (pnt.Y() > 0)) {
+            points[3] = true;
+            fillet_builder.AddFillet(vertex, r);
+        }
+    }
+
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            fillet_builder.Shape()
         ),
         exprcad_free_shape
     );
