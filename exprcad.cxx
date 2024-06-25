@@ -47,6 +47,10 @@ extern "C"
 
 #include <STEPControl_Writer.hxx>
 
+#include <StepData_Protocol.hxx>
+#include <StepData_StepModel.hxx>
+#include <StepData_StepWriter.hxx>
+
 #include <TopExp_Explorer.hxx>
 
 
@@ -311,18 +315,43 @@ EXPRCAD_DEFINE(exprcad_extrude, 2, 0, 0, (SCM size_z, SCM shape))
     );
 }
 
-EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM shape, SCM filename))
+EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM port, SCM shape))
 {
-    char *the_filename = scm_to_locale_string(filename);
+    // https://dev.opencascade.org/doc/overview/html/occt_user_guides__step.html
+
+    // Write STEP data to a stream instead of a file
+    // https://tracker.dev.opencascade.org/view.php?id=0032350
+
+    std::ostringstream stream;
 
     STEPControl_Writer writer;
-    writer.Transfer(
+
+    const IFSelect_ReturnStatus status = writer.Transfer(
         *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape)),
         STEPControl_AsIs
     );
-    writer.Write(the_filename);
+    if (status != IFSelect_RetDone) {
+        return SCM_BOOL_F;
+    }
 
-    free(the_filename);
+    Handle(StepData_StepModel) model = writer.Model();
+    if (model.IsNull()) {
+        return SCM_BOOL_F;
+    }
+
+    Handle(StepData_Protocol) protocol = Handle(StepData_Protocol)::DownCast(model->Protocol());
+    if (protocol.IsNull()) {
+        return SCM_BOOL_F;
+    }
+
+    StepData_StepWriter data_writer(model);
+    data_writer.SendModel(protocol);
+    if (!data_writer.Print(stream)) {
+        return SCM_BOOL_F;
+    }
+
+    const std::string &stream_data = stream.str();
+    scm_c_write(port, stream_data.data(), stream_data.size());
 
     return SCM_BOOL_T;
 }
