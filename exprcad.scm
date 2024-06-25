@@ -68,3 +68,5 @@
 (export exprcad-extrude)
 
 (export exprcad-export-step)
+
+(export exprcad-export-glb)

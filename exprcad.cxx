@@ -53,6 +53,13 @@ extern "C"
 
 #include <TopExp_Explorer.hxx>
 
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <XCAFApp_Application.hxx>
+#include <TDocStd_Document.hxx>
+#include <XCAFDoc_DocumentTool.hxx>
+#include <XCAFDoc_ShapeTool.hxx>
+#include <Message_ProgressRange.hxx>
+#include <RWGltf_CafWriter.hxx>
 
 #define EXPRCAD_DEFINE(FNAME, REQ, OPT, VAR, ARGLIST) \
 SCM_SNARF_HERE(\
@@ -354,6 +361,37 @@ EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM port, SCM shape))
     scm_c_write(port, stream_data.data(), stream_data.size());
 
     return SCM_BOOL_T;
+}
+
+EXPRCAD_DEFINE(exprcad_export_glb, 2, 0, 0, (SCM filename, SCM shape))
+{
+    char *the_filename = scm_to_locale_string(filename);
+
+    TopoDS_Shape the_shape(*static_cast<const TopoDS_Shape *>(scm_to_pointer(shape)));
+
+    Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
+
+    Handle(TDocStd_Document) doc = new TDocStd_Document("XmlOcaf");
+    app->InitDocument(doc);
+
+    Handle(XCAFDoc_ShapeTool) shape_tool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+    shape_tool->AddShape(the_shape);
+
+    BRepMesh_IncrementalMesh mesh(the_shape, 1e-3);
+
+    SCM result = SCM_BOOL_T;
+
+    TColStd_IndexedDataMapOfStringString metadata;
+    RWGltf_CafWriter writer(the_filename, true);
+    writer.ChangeCoordinateSystemConverter().SetInputCoordinateSystem(RWMesh_CoordinateSystem_Zup);
+    Message_ProgressRange progress_range;
+    if (!writer.Perform(doc, metadata, progress_range)) {
+        result = SCM_BOOL_F;
+    }
+
+    free(the_filename);
+
+    return result;
 }
 
 extern "C"
