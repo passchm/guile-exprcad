@@ -231,6 +231,44 @@ EXPRCAD_DEFINE(exprcad_scale_uniformly, 2, 0, 0, (SCM factor, SCM shape))
     );
 }
 
+EXPRCAD_DEFINE(exprcad_axis_mirror, 4, 0, 0, (SCM a_x, SCM a_y, SCM a_z, SCM shape))
+{
+    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+
+    const gp_Dir axis_vector(scm_to_double(a_x), scm_to_double(a_y), scm_to_double(a_z));
+
+    gp_Trsf transformation;
+    transformation.SetMirror(gp_Ax1(gp::Origin(), axis_vector));
+
+    BRepBuilderAPI_Transform builder(the_shape, transformation, true);
+
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            builder.Shape()
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_plane_mirror, 4, 0, 0, (SCM n_x, SCM n_y, SCM n_z, SCM shape))
+{
+    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+
+    const gp_Dir normal_vector(scm_to_double(n_x), scm_to_double(n_y), scm_to_double(n_z));
+
+    gp_Trsf transformation;
+    transformation.SetMirror(gp_Ax2(gp::Origin(), normal_vector));
+
+    BRepBuilderAPI_Transform builder(the_shape, transformation, true);
+
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            builder.Shape()
+        ),
+        exprcad_free_shape
+    );
+}
+
 EXPRCAD_DEFINE(exprcad_rectangle, 2, 0, 0, (SCM size_x, SCM size_y))
 {
     const double s_x = scm_to_double(size_x);

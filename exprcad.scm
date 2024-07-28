@@ -65,6 +65,10 @@
 
 (export exprcad-scale-uniformly)
 
+(export exprcad-axis-mirror)
+
+(export exprcad-plane-mirror)
+
 (export exprcad-rectangle)
 
 (export exprcad-rounded-rectangle)
