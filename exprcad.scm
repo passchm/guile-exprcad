@@ -84,3 +84,5 @@
 (export exprcad-export-step)
 
 (export exprcad-export-glb)
+
+(export exprcad-export-ascii-stl)

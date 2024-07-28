@@ -64,6 +64,9 @@ extern "C"
 #include <Message_ProgressRange.hxx>
 #include <RWGltf_CafWriter.hxx>
 
+#include <StlAPI_Writer.hxx>
+
+
 #define EXPRCAD_DEFINE(FNAME, REQ, OPT, VAR, ARGLIST) \
 SCM_SNARF_HERE(\
 extern "C" SCM FNAME ARGLIST\
@@ -466,6 +469,22 @@ EXPRCAD_DEFINE(exprcad_export_glb, 2, 0, 0, (SCM filename, SCM shape))
     free(the_filename);
 
     return result;
+}
+
+EXPRCAD_DEFINE(exprcad_export_ascii_stl, 2, 0, 0, (SCM filename, SCM shape))
+{
+    char *the_filename = scm_to_locale_string(filename);
+
+    TopoDS_Shape the_shape(*static_cast<const TopoDS_Shape *>(scm_to_pointer(shape)));
+
+    BRepMesh_IncrementalMesh mesh(the_shape, 1e-3);
+
+    StlAPI_Writer writer;
+    writer.Write(the_shape, the_filename);
+
+    free(the_filename);
+
+    return SCM_BOOL_T;
 }
 
 extern "C"
