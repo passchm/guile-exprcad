@@ -73,6 +73,8 @@
 
 (export exprcad-extrude)
 
+(export exprcad-bounding-box)
+
 (export exprcad-export-step)
 
 (export exprcad-export-glb)

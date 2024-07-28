@@ -45,6 +45,8 @@ extern "C"
 
 #include <gp_Pln.hxx>
 
+#include <BRepBndLib.hxx>
+
 #include <STEPControl_Writer.hxx>
 
 #include <StepData_Protocol.hxx>
@@ -319,6 +321,26 @@ EXPRCAD_DEFINE(exprcad_extrude, 2, 0, 0, (SCM size_z, SCM shape))
             )
         ),
         exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_bounding_box, 1, 0, 0, (SCM shape))
+{
+    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+
+    Bnd_Box box;
+    BRepBndLib::AddOptimal(the_shape, box);
+    double x_min, y_min, z_min, x_max, y_max, z_max;
+    box.Get(x_min, y_min, z_min, x_max, y_max, z_max);
+
+    return scm_list_n(
+        scm_from_double(x_min),
+        scm_from_double(y_min),
+        scm_from_double(z_min),
+        scm_from_double(x_max),
+        scm_from_double(y_max),
+        scm_from_double(z_max),
+        SCM_UNDEFINED
     );
 }
 
