@@ -29,6 +29,7 @@ extern "C"
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
+#include <BRepPrimAPI_MakeHalfSpace.hxx>
 
 #include <BRepAlgoAPI_Common.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
@@ -123,6 +124,19 @@ EXPRCAD_DEFINE(exprcad_sphere, 1, 0, 0, (SCM radius))
         new TopoDS_Shape(
             BRepPrimAPI_MakeSphere(
                 scm_to_double(radius)
+            )
+        ),
+        exprcad_free_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_top_half_space, 0, 0, 0, ())
+{
+    return scm_from_pointer(
+        new TopoDS_Shape(
+            BRepPrimAPI_MakeHalfSpace(
+                BRepBuilderAPI_MakeFace(gp_Pln()),
+                gp_Pnt(0, 0, 1)
             )
         ),
         exprcad_free_shape

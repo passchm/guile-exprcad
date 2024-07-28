@@ -28,6 +28,8 @@
 
 (export exprcad-sphere)
 
+(export exprcad-top-half-space)
+
 (export exprcad-common)
 
 (begin
