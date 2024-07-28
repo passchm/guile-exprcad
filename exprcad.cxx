@@ -182,7 +182,7 @@ EXPRCAD_DEFINE(exprcad_translate, 4, 0, 0, (SCM x, SCM y, SCM z, SCM shape))
 }
 
 SCM
-exprcad_rotate(const gp_Ax1 &axis, SCM &angle, SCM &shape)
+exprcad_rotate_radians(const gp_Ax1 &axis, SCM &angle, SCM &shape)
 {
     const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
 
@@ -197,19 +197,19 @@ exprcad_rotate(const gp_Ax1 &axis, SCM &angle, SCM &shape)
     );
 }
 
-EXPRCAD_DEFINE(exprcad_rotate_x, 2, 0, 0, (SCM angle, SCM shape))
+EXPRCAD_DEFINE(exprcad_rotate_radians_x, 2, 0, 0, (SCM angle, SCM shape))
 {
-    return exprcad_rotate(gp::OX(), angle, shape);
+    return exprcad_rotate_radians(gp::OX(), angle, shape);
 }
 
-EXPRCAD_DEFINE(exprcad_rotate_y, 2, 0, 0, (SCM angle, SCM shape))
+EXPRCAD_DEFINE(exprcad_rotate_radians_y, 2, 0, 0, (SCM angle, SCM shape))
 {
-    return exprcad_rotate(gp::OY(), angle, shape);
+    return exprcad_rotate_radians(gp::OY(), angle, shape);
 }
 
-EXPRCAD_DEFINE(exprcad_rotate_z, 2, 0, 0, (SCM angle, SCM shape))
+EXPRCAD_DEFINE(exprcad_rotate_radians_z, 2, 0, 0, (SCM angle, SCM shape))
 {
-    return exprcad_rotate(gp::OZ(), angle, shape);
+    return exprcad_rotate_radians(gp::OZ(), angle, shape);
 }
 
 EXPRCAD_DEFINE(exprcad_scale_uniformly, 2, 0, 0, (SCM factor, SCM shape))

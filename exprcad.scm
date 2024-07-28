@@ -51,11 +51,17 @@
 
 (export exprcad-translate)
 
-(export exprcad-rotate-x)
+(export exprcad-rotate-radians-x)
 
-(export exprcad-rotate-y)
+(export exprcad-rotate-radians-y)
 
-(export exprcad-rotate-z)
+(export exprcad-rotate-radians-z)
+
+; /usr/include/math.h M_PI
+(define-public exprcad-pi 3.14159265358979323846)
+
+(define-public (exprcad-degrees->radians degrees)
+               (* (/ exprcad-pi 180) degrees))
 
 (export exprcad-scale-uniformly)
 
