@@ -440,7 +440,7 @@ EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM port, SCM shape))
     return SCM_BOOL_T;
 }
 
-EXPRCAD_DEFINE(exprcad_export_glb, 2, 0, 0, (SCM filename, SCM shape))
+EXPRCAD_DEFINE(exprcad_export_glb_file, 2, 0, 0, (SCM filename, SCM shape))
 {
     char *the_filename = scm_to_locale_string(filename);
 
@@ -471,7 +471,7 @@ EXPRCAD_DEFINE(exprcad_export_glb, 2, 0, 0, (SCM filename, SCM shape))
     return result;
 }
 
-EXPRCAD_DEFINE(exprcad_export_ascii_stl, 2, 0, 0, (SCM filename, SCM shape))
+EXPRCAD_DEFINE(exprcad_export_ascii_stl_file, 2, 0, 0, (SCM filename, SCM shape))
 {
     char *the_filename = scm_to_locale_string(filename);
 
