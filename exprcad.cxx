@@ -73,146 +73,186 @@ extern "C" SCM FNAME ARGLIST\
 )
 
 
+// TopoDS_Shape
+SCM exprcad_type_shape;
+
+
 extern "C"
 void
-exprcad_free_shape(void *shape)
+exprcad_finalize_shape(SCM shape)
 {
-    delete static_cast<TopoDS_Shape *>(shape);
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    TopoDS_Shape *the_shape = static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    if (the_shape != nullptr) {
+        scm_foreign_object_set_x(shape, 0, nullptr);
+
+        delete the_shape;
+        the_shape = nullptr;
+    }
+
+    scm_remember_upto_here_1(shape);
 }
+
 
 EXPRCAD_DEFINE(exprcad_box, 3, 0, 0, (SCM size_x, SCM size_y, SCM size_z))
 {
-    return scm_from_pointer(
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
         new TopoDS_Shape(
             BRepPrimAPI_MakeBox(
                 scm_to_double(size_x),
                 scm_to_double(size_y),
                 scm_to_double(size_z)
             )
-        ),
-        exprcad_free_shape
+        )
     );
 }
 
 EXPRCAD_DEFINE(exprcad_cone, 3, 0, 0, (SCM bottom_radius, SCM top_radius, SCM height))
 {
-    return scm_from_pointer(
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
         new TopoDS_Shape(
             BRepPrimAPI_MakeCone(
                 scm_to_double(bottom_radius),
                 scm_to_double(top_radius),
                 scm_to_double(height)
             )
-        ),
-        exprcad_free_shape
+        )
     );
 }
 
 EXPRCAD_DEFINE(exprcad_cylinder, 2, 0, 0, (SCM radius, SCM height))
 {
-    return scm_from_pointer(
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
         new TopoDS_Shape(
             BRepPrimAPI_MakeCylinder(
                 scm_to_double(radius),
                 scm_to_double(height)
             )
-        ),
-        exprcad_free_shape
+        )
     );
 }
 
 EXPRCAD_DEFINE(exprcad_sphere, 1, 0, 0, (SCM radius))
 {
-    return scm_from_pointer(
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
         new TopoDS_Shape(
             BRepPrimAPI_MakeSphere(
                 scm_to_double(radius)
             )
-        ),
-        exprcad_free_shape
+        )
     );
 }
 
 EXPRCAD_DEFINE(exprcad_top_half_space, 0, 0, 0, ())
 {
-    return scm_from_pointer(
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
         new TopoDS_Shape(
             BRepPrimAPI_MakeHalfSpace(
                 BRepBuilderAPI_MakeFace(gp_Pln()),
                 gp_Pnt(0, 0, 1)
             )
-        ),
-        exprcad_free_shape
+        )
     );
 }
 
-EXPRCAD_DEFINE(exprcad_common, 2, 0, 0, (SCM a, SCM b))
+EXPRCAD_DEFINE(exprcad_common, 2, 0, 0, (SCM shape_a, SCM shape_b))
 {
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            BRepAlgoAPI_Common(
-                *static_cast<const TopoDS_Shape *>(scm_to_pointer(a)),
-                *static_cast<const TopoDS_Shape *>(scm_to_pointer(b))
-            )
-        ),
-        exprcad_free_shape
+    scm_assert_foreign_object_type(exprcad_type_shape, shape_a);
+    scm_assert_foreign_object_type(exprcad_type_shape, shape_b);
+    const TopoDS_Shape &the_shape_a = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape_a, 0));
+    const TopoDS_Shape &the_shape_b = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape_b, 0));
+
+    TopoDS_Shape *result_shape = new TopoDS_Shape(BRepAlgoAPI_Common(the_shape_a, the_shape_b));
+
+    scm_remember_upto_here_1(shape_a);
+    scm_remember_upto_here_1(shape_b);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
-EXPRCAD_DEFINE(exprcad_cut, 2, 0, 0, (SCM a, SCM b))
+EXPRCAD_DEFINE(exprcad_cut, 2, 0, 0, (SCM shape_a, SCM shape_b))
 {
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            BRepAlgoAPI_Cut(
-                *static_cast<const TopoDS_Shape *>(scm_to_pointer(a)),
-                *static_cast<const TopoDS_Shape *>(scm_to_pointer(b))
-            )
-        ),
-        exprcad_free_shape
+    scm_assert_foreign_object_type(exprcad_type_shape, shape_a);
+    scm_assert_foreign_object_type(exprcad_type_shape, shape_b);
+    const TopoDS_Shape &the_shape_a = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape_a, 0));
+    const TopoDS_Shape &the_shape_b = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape_b, 0));
+
+    TopoDS_Shape *result_shape = new TopoDS_Shape(BRepAlgoAPI_Cut(the_shape_a, the_shape_b));
+
+    scm_remember_upto_here_1(shape_a);
+    scm_remember_upto_here_1(shape_b);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
-EXPRCAD_DEFINE(exprcad_fuse, 2, 0, 0, (SCM a, SCM b))
+EXPRCAD_DEFINE(exprcad_fuse, 2, 0, 0, (SCM shape_a, SCM shape_b))
 {
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            BRepAlgoAPI_Fuse(
-                *static_cast<const TopoDS_Shape *>(scm_to_pointer(a)),
-                *static_cast<const TopoDS_Shape *>(scm_to_pointer(b))
-            )
-        ),
-        exprcad_free_shape
+    scm_assert_foreign_object_type(exprcad_type_shape, shape_a);
+    scm_assert_foreign_object_type(exprcad_type_shape, shape_b);
+    const TopoDS_Shape &the_shape_a = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape_a, 0));
+    const TopoDS_Shape &the_shape_b = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape_b, 0));
+
+    TopoDS_Shape *result_shape = new TopoDS_Shape(BRepAlgoAPI_Fuse(the_shape_a, the_shape_b));
+
+    scm_remember_upto_here_1(shape_a);
+    scm_remember_upto_here_1(shape_b);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
 EXPRCAD_DEFINE(exprcad_translate, 4, 0, 0, (SCM x, SCM y, SCM z, SCM shape))
 {
-    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
 
     gp_Trsf transformation;
     transformation.SetTranslation(gp_Vec(scm_to_double(x), scm_to_double(y), scm_to_double(z)));
 
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            the_shape.Moved(TopLoc_Location(transformation))
-        ),
-        exprcad_free_shape
+    TopoDS_Shape *result_shape = new TopoDS_Shape(
+        the_shape.Moved(TopLoc_Location(transformation))
+    );
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
 SCM
 exprcad_rotate_radians(const gp_Ax1 &axis, SCM &angle, SCM &shape)
 {
-    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
 
     gp_Trsf transformation;
     transformation.SetRotation(axis, scm_to_double(angle));
 
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            the_shape.Moved(TopLoc_Location(transformation))
-        ),
-        exprcad_free_shape
+    TopoDS_Shape *result_shape = new TopoDS_Shape(
+        the_shape.Moved(TopLoc_Location(transformation))
+    );
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
@@ -233,24 +273,30 @@ EXPRCAD_DEFINE(exprcad_rotate_radians_z, 2, 0, 0, (SCM angle, SCM shape))
 
 EXPRCAD_DEFINE(exprcad_scale_uniformly, 2, 0, 0, (SCM factor, SCM shape))
 {
-    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
 
     gp_Trsf transformation;
     transformation.SetScaleFactor(scm_to_double(factor));
 
     BRepBuilderAPI_Transform builder(the_shape, transformation, true);
 
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            builder.Shape()
-        ),
-        exprcad_free_shape
+    TopoDS_Shape *result_shape = new TopoDS_Shape(
+        builder.Shape()
+    );
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
 EXPRCAD_DEFINE(exprcad_axis_mirror, 4, 0, 0, (SCM a_x, SCM a_y, SCM a_z, SCM shape))
 {
-    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
 
     const gp_Dir axis_vector(scm_to_double(a_x), scm_to_double(a_y), scm_to_double(a_z));
 
@@ -259,17 +305,22 @@ EXPRCAD_DEFINE(exprcad_axis_mirror, 4, 0, 0, (SCM a_x, SCM a_y, SCM a_z, SCM sha
 
     BRepBuilderAPI_Transform builder(the_shape, transformation, true);
 
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            builder.Shape()
-        ),
-        exprcad_free_shape
+    TopoDS_Shape *result_shape = new TopoDS_Shape(
+        builder.Shape()
+    );
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
 EXPRCAD_DEFINE(exprcad_plane_mirror, 4, 0, 0, (SCM n_x, SCM n_y, SCM n_z, SCM shape))
 {
-    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
 
     const gp_Dir normal_vector(scm_to_double(n_x), scm_to_double(n_y), scm_to_double(n_z));
 
@@ -278,11 +329,15 @@ EXPRCAD_DEFINE(exprcad_plane_mirror, 4, 0, 0, (SCM n_x, SCM n_y, SCM n_z, SCM sh
 
     BRepBuilderAPI_Transform builder(the_shape, transformation, true);
 
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            builder.Shape()
-        ),
-        exprcad_free_shape
+    TopoDS_Shape *result_shape = new TopoDS_Shape(
+        builder.Shape()
+    );
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
@@ -294,11 +349,11 @@ EXPRCAD_DEFINE(exprcad_rectangle, 2, 0, 0, (SCM size_x, SCM size_y))
     const gp_Pln plane;
     const BRepBuilderAPI_MakeFace face_builder(plane, -0.5 * s_x, 0.5 * s_x, -0.5 * s_y, 0.5 * s_y);
 
-    return scm_from_pointer(
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
         new TopoDS_Shape(
             face_builder.Face()
-        ),
-        exprcad_free_shape
+        )
     );
 }
 
@@ -339,11 +394,11 @@ EXPRCAD_DEFINE(exprcad_rounded_rectangle, 3, 0, 0, (SCM size_x, SCM size_y, SCM 
         }
     }
 
-    return scm_from_pointer(
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
         new TopoDS_Shape(
             fillet_builder.Shape()
-        ),
-        exprcad_free_shape
+        )
     );
 }
 
@@ -357,36 +412,46 @@ EXPRCAD_DEFINE(exprcad_disc, 1, 0, 0, (SCM radius))
 
     const BRepBuilderAPI_MakeFace face_builder(wire_builder.Wire());
 
-    return scm_from_pointer(
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
         new TopoDS_Shape(
             face_builder.Face()
-        ),
-        exprcad_free_shape
+        )
     );
 }
 
 EXPRCAD_DEFINE(exprcad_extrude, 2, 0, 0, (SCM size_z, SCM shape))
 {
-    return scm_from_pointer(
-        new TopoDS_Shape(
-            BRepPrimAPI_MakePrism(
-                *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape)),
-                gp_Vec(0, 0, scm_to_double(size_z)),
-                true
-            )
-        ),
-        exprcad_free_shape
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    TopoDS_Shape *result_shape = new TopoDS_Shape(
+        BRepPrimAPI_MakePrism(
+            the_shape,
+            gp_Vec(0, 0, scm_to_double(size_z)),
+            true
+        )
+    );
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
     );
 }
 
 EXPRCAD_DEFINE(exprcad_bounding_box, 1, 0, 0, (SCM shape))
 {
-    const TopoDS_Shape &the_shape = *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape));
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
 
     Bnd_Box box;
     BRepBndLib::AddOptimal(the_shape, box);
     double x_min, y_min, z_min, x_max, y_max, z_max;
     box.Get(x_min, y_min, z_min, x_max, y_max, z_max);
+
+    scm_remember_upto_here_1(shape);
 
     return scm_list_n(
         scm_from_double(x_min),
@@ -401,6 +466,9 @@ EXPRCAD_DEFINE(exprcad_bounding_box, 1, 0, 0, (SCM shape))
 
 EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM port, SCM shape))
 {
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
     // https://dev.opencascade.org/doc/overview/html/occt_user_guides__step.html
 
     // Write STEP data to a stream instead of a file
@@ -411,7 +479,7 @@ EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM port, SCM shape))
     STEPControl_Writer writer;
 
     const IFSelect_ReturnStatus status = writer.Transfer(
-        *static_cast<const TopoDS_Shape *>(scm_to_pointer(shape)),
+        the_shape,
         STEPControl_AsIs
     );
     if (status != IFSelect_RetDone) {
@@ -437,14 +505,17 @@ EXPRCAD_DEFINE(exprcad_export_step, 2, 0, 0, (SCM port, SCM shape))
     const std::string &stream_data = stream.str();
     scm_c_write(port, stream_data.data(), stream_data.size());
 
+    scm_remember_upto_here_1(shape);
+
     return SCM_BOOL_T;
 }
 
 EXPRCAD_DEFINE(exprcad_export_glb_file, 2, 0, 0, (SCM filename, SCM shape))
 {
-    char *the_filename = scm_to_locale_string(filename);
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
 
-    TopoDS_Shape the_shape(*static_cast<const TopoDS_Shape *>(scm_to_pointer(shape)));
+    char *the_filename = scm_to_locale_string(filename);
 
     Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
 
@@ -468,14 +539,17 @@ EXPRCAD_DEFINE(exprcad_export_glb_file, 2, 0, 0, (SCM filename, SCM shape))
 
     free(the_filename);
 
+    scm_remember_upto_here_1(shape);
+
     return result;
 }
 
 EXPRCAD_DEFINE(exprcad_export_ascii_stl_file, 2, 0, 0, (SCM filename, SCM shape))
 {
-    char *the_filename = scm_to_locale_string(filename);
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
 
-    TopoDS_Shape the_shape(*static_cast<const TopoDS_Shape *>(scm_to_pointer(shape)));
+    char *the_filename = scm_to_locale_string(filename);
 
     BRepMesh_IncrementalMesh mesh(the_shape, 1e-3);
 
@@ -484,13 +558,26 @@ EXPRCAD_DEFINE(exprcad_export_ascii_stl_file, 2, 0, 0, (SCM filename, SCM shape)
 
     free(the_filename);
 
+    scm_remember_upto_here_1(shape);
+
     return SCM_BOOL_T;
+}
+
+
+void
+exprcad_init_type_shape()
+{
+    SCM name = scm_from_utf8_symbol("shape");
+    SCM slots = scm_list_1(scm_from_utf8_symbol("pointer"));
+    exprcad_type_shape = scm_make_foreign_object_type(name, slots, exprcad_finalize_shape);
 }
 
 extern "C"
 void
 exprcad_init()
 {
+    exprcad_init_type_shape();
+
 #ifndef SCM_MAGIC_SNARFER
 #include "exprcad_snarf_init.hxx"
 #endif
