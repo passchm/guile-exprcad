@@ -50,6 +50,12 @@ extern "C"
 #include <BRepBndLib.hxx>
 
 #include <GeomLib_IsPlanarSurface.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <BRepTools.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
+#include <GeomLProp_SLProps.hxx>
+#include <GeomAPI_ProjectPointOnSurf.hxx>
 
 #include <STEPControl_Writer.hxx>
 
@@ -669,6 +675,200 @@ EXPRCAD_DEFINE(exprcad_fillet_3d_edges_radii, 2, 0, 0, (SCM shape, SCM radii))
         result_shape
     );
 }
+
+// The procedures for filtering faces are strongly inspired by CadQuery:
+// https://cadquery.readthedocs.io/en/latest/selectors.html#filtering-faces
+
+EXPRCAD_DEFINE(exprcad_filter_planar_faces, 2, 0, 0, (SCM shape, SCM faces))
+{
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    TopTools_IndexedMapOfShape faces_map;
+    TopExp::MapShapes(the_shape, TopAbs_FACE, faces_map);
+
+    SCM result = SCM_EOL;
+    SCM *pos = &result;
+
+    for (size_t face_index = 0; face_index < faces_map.Extent(); ++face_index) {
+        SCM faces_list = faces;
+        size_t candidate_face_index;
+        while (scm_is_pair(faces_list)) {
+            candidate_face_index = scm_to_size_t(scm_car(faces_list));
+            if (candidate_face_index == face_index) {
+                const TopoDS_Face &face = TopoDS::Face(faces_map(face_index + 1));
+
+                Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+                GeomLib_IsPlanarSurface checker(surface);
+                if (checker.IsPlanar()) {
+                    *pos = scm_cons(scm_from_size_t(face_index), SCM_EOL);
+                    pos = SCM_CDRLOC(*pos);
+                }
+            }
+            faces_list = scm_cdr(faces_list);
+        }
+    }
+
+    scm_remember_upto_here_1(shape);
+
+    return result;
+}
+
+gp_Dir
+exprcad_calculate_normal_vector_of_face(const TopoDS_Face &face)
+{
+    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+    GeomLib_IsPlanarSurface checker(surface);
+    if (checker.IsPlanar()) {
+        const gp_Ax1 plane_normal = checker.Plan().Axis();
+
+        gp_Dir face_normal = plane_normal.Direction();
+        if (face.Orientation() == TopAbs_REVERSED) {
+            face_normal.Reverse();
+        }
+        return face_normal;
+    }
+    else {
+        // For non-planar faces use the normal vector at the centroid of the face.
+        GProp_GProps surface_props;
+        BRepGProp::SurfaceProperties(face, surface_props);
+        const gp_Pnt centroid = surface_props.CentreOfMass();
+
+        GeomAPI_ProjectPointOnSurf projected_centroid(centroid, surface);
+        double centroid_u = 0;
+        double centroid_v = 0;
+        projected_centroid.LowerDistanceParameters(centroid_u, centroid_v);
+
+        GeomLProp_SLProps props(surface, centroid_u, centroid_v, 1, 0.001);
+        const gp_Ax1 surface_axis(props.Value(), props.Normal());
+
+        gp_Dir face_normal = surface_axis.Direction();
+        if (face.Orientation() == TopAbs_REVERSED) {
+            face_normal.Reverse();
+        }
+        return face_normal;
+    }
+}
+
+EXPRCAD_DEFINE(exprcad_filter_aligned_faces, 5, 0, 0, (SCM shape, SCM faces, SCM dir_x, SCM dir_y, SCM dir_z))
+{
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    const gp_Dir dir(scm_to_double(dir_x), scm_to_double(dir_y), scm_to_double(dir_z));
+
+    TopTools_IndexedMapOfShape faces_map;
+    TopExp::MapShapes(the_shape, TopAbs_FACE, faces_map);
+
+    SCM result = SCM_EOL;
+    SCM *pos = &result;
+
+    for (size_t face_index = 0; face_index < faces_map.Extent(); ++face_index) {
+        SCM faces_list = faces;
+        size_t candidate_face_index;
+        while (scm_is_pair(faces_list)) {
+            candidate_face_index = scm_to_size_t(scm_car(faces_list));
+            if (candidate_face_index == face_index) {
+                const TopoDS_Face &face = TopoDS::Face(faces_map(face_index + 1));
+
+                const gp_Dir face_normal = exprcad_calculate_normal_vector_of_face(face);
+                if (face_normal.IsEqual(dir, 0.001)) {
+                    *pos = scm_cons(scm_from_size_t(face_index), SCM_EOL);
+                    pos = SCM_CDRLOC(*pos);
+                }
+            }
+            faces_list = scm_cdr(faces_list);
+        }
+    }
+
+    scm_remember_upto_here_1(shape);
+
+    return result;
+}
+
+// The procedures for filtering edges are strongly inspired by CadQuery:
+// https://cadquery.readthedocs.io/en/latest/selectors.html#filtering-edges
+
+EXPRCAD_DEFINE(exprcad_filter_edges_of_face, 3, 0, 0, (SCM shape, SCM edges, SCM face_index))
+{
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    const size_t the_face_index = scm_to_size_t(face_index);
+
+    TopTools_IndexedMapOfShape faces_map;
+    TopExp::MapShapes(the_shape, TopAbs_FACE, faces_map);
+    assert((the_face_index < faces_map.Extent()));
+    const TopoDS_Face &face = TopoDS::Face(faces_map(the_face_index + 1));
+
+    SCM result = SCM_EOL;
+    SCM *pos = &result;
+
+    TopTools_IndexedMapOfShape edges_of_face_map;
+    TopExp::MapShapes(face, TopAbs_EDGE, edges_of_face_map);
+
+    TopTools_IndexedMapOfShape edges_map;
+    TopExp::MapShapes(the_shape, TopAbs_EDGE, edges_map);
+    for (size_t edge_index = 0; edge_index < edges_map.Extent(); ++edge_index) {
+        const size_t edge_in_face_index = edges_of_face_map.FindIndex(edges_map(edge_index + 1));
+        if (edge_in_face_index > 0) {
+            size_t candidate_edge_index;
+            SCM edges_list = edges;
+            while (scm_is_pair(edges_list)) {
+                candidate_edge_index = scm_to_size_t(scm_car(edges_list));
+                if (candidate_edge_index == edge_index) {
+                    *pos = scm_cons(scm_from_size_t(edge_index), SCM_EOL);
+                    pos = SCM_CDRLOC(*pos);
+                }
+                edges_list = scm_cdr(edges_list);
+            }
+        }
+    }
+
+    scm_remember_upto_here_1(shape);
+
+    return result;
+}
+
+EXPRCAD_DEFINE(exprcad_filter_parallel_linear_edges, 5, 0, 0, (SCM shape, SCM edges, SCM dir_x, SCM dir_y, SCM dir_z))
+{
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    const gp_Dir dir(scm_to_double(dir_x), scm_to_double(dir_y), scm_to_double(dir_z));
+
+    TopTools_IndexedMapOfShape edges_map;
+    TopExp::MapShapes(the_shape, TopAbs_EDGE, edges_map);
+
+    SCM result = SCM_EOL;
+    SCM *pos = &result;
+
+    for (size_t edge_index = 0; edge_index < edges_map.Extent(); ++edge_index) {
+        SCM edges_list = edges;
+        size_t candidate_edge_index;
+        while (scm_is_pair(edges_list)) {
+            candidate_edge_index = scm_to_size_t(scm_car(edges_list));
+            if (candidate_edge_index == edge_index) {
+                const TopoDS_Edge &edge = TopoDS::Edge(edges_map(edge_index + 1));
+
+                BRepAdaptor_Curve curve(edge);
+                if (curve.GetType() == GeomAbs_Line) {
+                    const bool is_parallel = curve.Line().Direction().IsParallel(dir, 0.001);
+                    if (is_parallel) {
+                        *pos = scm_cons(scm_from_size_t(edge_index), SCM_EOL);
+                        pos = SCM_CDRLOC(*pos);
+                    }
+                }
+            }
+            edges_list = scm_cdr(edges_list);
+        }
+    }
+
+    scm_remember_upto_here_1(shape);
+
+    return result;
+}
+
 
 void
 exprcad_init_type_shape()

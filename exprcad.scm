@@ -100,3 +100,11 @@
 (export exprcad-fillet-2d-vertices-radii)
 
 (export exprcad-fillet-3d-edges-radii)
+
+(export exprcad-filter-planar-faces)
+
+(export exprcad-filter-aligned-faces)
+
+(export exprcad-filter-edges-of-face)
+
+(export exprcad-filter-parallel-linear-edges)
