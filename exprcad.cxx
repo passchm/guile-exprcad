@@ -54,8 +54,6 @@ extern "C"
 #include <StepData_StepModel.hxx>
 #include <StepData_StepWriter.hxx>
 
-#include <TopExp_Explorer.hxx>
-
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <XCAFApp_Application.hxx>
 #include <TDocStd_Document.hxx>
@@ -369,29 +367,11 @@ EXPRCAD_DEFINE(exprcad_rounded_rectangle, 3, 0, 0, (SCM size_x, SCM size_y, SCM 
 
     const double r = scm_to_double(radius);
 
-    bool points[4] = { false };
-
-    for (TopExp_Explorer exp(face_builder.Face(), TopAbs_VERTEX); exp.More(); exp.Next()) {
-        const TopoDS_Vertex &vertex = TopoDS::Vertex(exp.Current());
-
-        const gp_Pnt pnt = BRep_Tool::Pnt(vertex);
-
-        if (!points[0] && (pnt.X() < 0) && (pnt.Y() < 0)) {
-            points[0] = true;
-            fillet_builder.AddFillet(vertex, r);
-        }
-        else if (!points[1] && (pnt.X() < 0) && (pnt.Y() > 0)) {
-            points[1] = true;
-            fillet_builder.AddFillet(vertex, r);
-        }
-        else if (!points[2] && (pnt.X() > 0) && (pnt.Y() < 0)) {
-            points[2] = true;
-            fillet_builder.AddFillet(vertex, r);
-        }
-        else if (!points[3] && (pnt.X() > 0) && (pnt.Y() > 0)) {
-            points[3] = true;
-            fillet_builder.AddFillet(vertex, r);
-        }
+    TopTools_IndexedMapOfShape vertices_map;
+    TopExp::MapShapes(face_builder.Face(), TopAbs_VERTEX, vertices_map);
+    for (size_t vertex_index = 0; vertex_index < vertices_map.Extent(); ++vertex_index) {
+        const TopoDS_Vertex &vertex = TopoDS::Vertex(vertices_map(vertex_index + 1));
+        fillet_builder.AddFillet(vertex, r);
     }
 
     return scm_make_foreign_object_1(
