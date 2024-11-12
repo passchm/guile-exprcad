@@ -90,3 +90,9 @@
 (export exprcad-export-glb-file)
 
 (export exprcad-export-ascii-stl-file)
+
+(export exprcad-count-faces)
+
+(export exprcad-count-edges)
+
+(export exprcad-count-vertices)

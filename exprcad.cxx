@@ -543,6 +543,36 @@ EXPRCAD_DEFINE(exprcad_export_ascii_stl_file, 2, 0, 0, (SCM filename, SCM shape)
     return SCM_BOOL_T;
 }
 
+SCM
+exprcad_count_shapes_of_type(SCM &shape, const TopAbs_ShapeEnum &shape_type)
+{
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    TopTools_IndexedMapOfShape map;
+    TopExp::MapShapes(the_shape, shape_type, map);
+    const size_t number_of_shapes = map.Extent();
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_from_size_t(number_of_shapes);
+}
+
+EXPRCAD_DEFINE(exprcad_count_faces, 1, 0, 0, (SCM shape))
+{
+    return exprcad_count_shapes_of_type(shape, TopAbs_FACE);
+}
+
+EXPRCAD_DEFINE(exprcad_count_edges, 1, 0, 0, (SCM shape))
+{
+    return exprcad_count_shapes_of_type(shape, TopAbs_EDGE);
+}
+
+EXPRCAD_DEFINE(exprcad_count_vertices, 1, 0, 0, (SCM shape))
+{
+    return exprcad_count_shapes_of_type(shape, TopAbs_VERTEX);
+}
+
 
 void
 exprcad_init_type_shape()
