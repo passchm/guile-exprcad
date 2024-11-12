@@ -83,6 +83,10 @@
 
 (export exprcad-export-step)
 
+(define-public (exprcad-export-step-file filename shape)
+               (call-with-output-file filename
+                                      (lambda (port) (exprcad-export-step port shape))))
+
 (export exprcad-export-glb-file)
 
 (export exprcad-export-ascii-stl-file)
