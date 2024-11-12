@@ -48,6 +48,8 @@ extern "C"
 
 #include <BRepBndLib.hxx>
 
+#include <GeomLib_IsPlanarSurface.hxx>
+
 #include <STEPControl_Writer.hxx>
 
 #include <StepData_Protocol.hxx>
@@ -63,6 +65,9 @@ extern "C"
 #include <RWGltf_CafWriter.hxx>
 
 #include <StlAPI_Writer.hxx>
+
+
+#include <cassert>
 
 
 #define EXPRCAD_DEFINE(FNAME, REQ, OPT, VAR, ARGLIST) \
@@ -573,6 +578,62 @@ EXPRCAD_DEFINE(exprcad_count_vertices, 1, 0, 0, (SCM shape))
     return exprcad_count_shapes_of_type(shape, TopAbs_VERTEX);
 }
 
+bool
+exprcad_is_planar_face(const TopoDS_Shape &shape)
+{
+    if (shape.ShapeType() != TopAbs_FACE) {
+        return false;
+    }
+
+    const TopoDS_Face &face = TopoDS::Face(shape);
+
+    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+    GeomLib_IsPlanarSurface checker(surface);
+    if (checker.IsPlanar()) {
+        return true;
+    }
+
+    return false;
+}
+
+EXPRCAD_DEFINE(exprcad_fillet_2d_vertices_radii, 2, 0, 0, (SCM shape, SCM radii))
+{
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &original_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    assert((scm_is_vector(radii)));
+
+    assert((exprcad_is_planar_face(original_shape)));
+    const TopoDS_Face &original_face = TopoDS::Face(original_shape);
+
+    BRepFilletAPI_MakeFillet2d fillet_builder(original_face);
+    assert((fillet_builder.Status() == ChFi2d_Ready));
+
+    size_t vertex_index;
+    TopTools_IndexedMapOfShape vertices_map;
+    TopExp::MapShapes(original_shape, TopAbs_VERTEX, vertices_map);
+    for (vertex_index = 0; vertex_index < vertices_map.Extent(); ++vertex_index) {
+        const TopoDS_Vertex &vertex = TopoDS::Vertex(vertices_map(vertex_index + 1));
+
+        const double radius = scm_to_double(scm_c_vector_ref(radii, vertex_index));
+        if (radius > 0) {
+            fillet_builder.AddFillet(vertex, radius);
+        }
+    }
+    assert((vertex_index == scm_c_vector_length(radii)));
+
+    TopoDS_Shape *result_shape = new TopoDS_Shape(
+        fillet_builder.Shape()
+    );
+    assert((fillet_builder.Status() == ChFi2d_IsDone));
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
+    );
+}
 
 void
 exprcad_init_type_shape()
