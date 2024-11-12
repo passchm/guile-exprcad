@@ -41,6 +41,7 @@ extern "C"
 #include <BRepBuilderAPI_Transform.hxx>
 
 #include <BRepFilletAPI_MakeFillet2d.hxx>
+#include <BRepFilletAPI_MakeFillet.hxx>
 
 #include <GC_MakeCircle.hxx>
 
@@ -626,6 +627,40 @@ EXPRCAD_DEFINE(exprcad_fillet_2d_vertices_radii, 2, 0, 0, (SCM shape, SCM radii)
         fillet_builder.Shape()
     );
     assert((fillet_builder.Status() == ChFi2d_IsDone));
+
+    scm_remember_upto_here_1(shape);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        result_shape
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_fillet_3d_edges_radii, 2, 0, 0, (SCM shape, SCM radii))
+{
+    scm_assert_foreign_object_type(exprcad_type_shape, shape);
+    const TopoDS_Shape &original_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
+
+    assert((scm_is_vector(radii)));
+
+    BRepFilletAPI_MakeFillet fillet_builder(original_shape);
+
+    size_t edge_index;
+    TopTools_IndexedMapOfShape edges_map;
+    TopExp::MapShapes(original_shape, TopAbs_EDGE, edges_map);
+    for (edge_index = 0; edge_index < edges_map.Extent(); ++edge_index) {
+        const TopoDS_Edge &edge = TopoDS::Edge(edges_map(edge_index + 1));
+
+        const double radius = scm_to_double(scm_c_vector_ref(radii, edge_index));
+        if (radius > 0) {
+            fillet_builder.Add(radius, edge);
+        }
+    }
+    assert((edge_index == scm_c_vector_length(radii)));
+
+    TopoDS_Shape *result_shape = new TopoDS_Shape(
+        fillet_builder.Shape()
+    );
 
     scm_remember_upto_here_1(shape);
 

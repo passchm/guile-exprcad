@@ -98,3 +98,5 @@
 (export exprcad-count-vertices)
 
 (export exprcad-fillet-2d-vertices-radii)
+
+(export exprcad-fillet-3d-edges-radii)
