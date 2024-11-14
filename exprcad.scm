@@ -20,91 +20,91 @@
 
 (load-extension "libguile-exprcad" "exprcad_init")
 
-(export exprcad-box)
+(export box)
 
-(export exprcad-cone)
+(export cone)
 
-(export exprcad-cylinder)
+(export cylinder)
 
-(export exprcad-sphere)
+(export sphere)
 
-(export exprcad-top-half-space)
+(export top-half-space)
 
-(export exprcad-common)
-
-(begin
-  (define* (exprcad-intersection shape #:rest shapes)
-           (fold exprcad-common shape shapes))
-  (export exprcad-intersection))
-
-(export exprcad-cut)
+(export common)
 
 (begin
-  (define* (exprcad-difference shape #:rest shapes)
-           (fold (lambda (x y) (exprcad-cut y x)) shape shapes))
-  (export exprcad-difference))
+  (define* (intersection shape #:rest shapes)
+           (fold common shape shapes))
+  (export intersection))
 
-(export exprcad-fuse)
+(export cut)
 
 (begin
-  (define* (exprcad-union shape #:rest shapes)
-           (fold exprcad-fuse shape shapes))
-  (export exprcad-union))
+  (define* (difference shape #:rest shapes)
+           (fold (lambda (x y) (cut y x)) shape shapes))
+  (export difference))
 
-(export exprcad-translate)
+(export fuse)
 
-(export exprcad-rotate-radians-x)
+(begin
+  (define* (union shape #:rest shapes)
+           (fold fuse shape shapes))
+  (export union))
 
-(export exprcad-rotate-radians-y)
+(export translate)
 
-(export exprcad-rotate-radians-z)
+(export rotate-radians-x)
+
+(export rotate-radians-y)
+
+(export rotate-radians-z)
 
 ; /usr/include/math.h M_PI
-(define-public exprcad-pi 3.14159265358979323846)
+(define-public pi 3.14159265358979323846)
 
-(define-public (exprcad-degrees->radians degrees)
-               (* (/ exprcad-pi 180) degrees))
+(define-public (degrees->radians degrees)
+               (* (/ pi 180) degrees))
 
-(export exprcad-scale-uniformly)
+(export scale-uniformly)
 
-(export exprcad-axis-mirror)
+(export axis-mirror)
 
-(export exprcad-plane-mirror)
+(export plane-mirror)
 
-(export exprcad-rectangle)
+(export rectangle)
 
-(export exprcad-rounded-rectangle)
+(export rounded-rectangle)
 
-(export exprcad-disc)
+(export disc)
 
-(export exprcad-extrude)
+(export extrude)
 
-(export exprcad-bounding-box)
+(export bounding-box)
 
-(export exprcad-export-step)
+(export export-step)
 
-(define-public (exprcad-export-step-file filename shape)
+(define-public (export-step-file filename shape)
                (call-with-output-file filename
-                                      (lambda (port) (exprcad-export-step port shape))))
+                                      (lambda (port) (export-step port shape))))
 
-(export exprcad-export-glb-file)
+(export export-glb-file)
 
-(export exprcad-export-ascii-stl-file)
+(export export-ascii-stl-file)
 
-(export exprcad-count-faces)
+(export count-faces)
 
-(export exprcad-count-edges)
+(export count-edges)
 
-(export exprcad-count-vertices)
+(export count-vertices)
 
-(export exprcad-fillet-2d-vertices-radii)
+(export fillet-2d-vertices-radii)
 
-(export exprcad-fillet-3d-edges-radii)
+(export fillet-3d-edges-radii)
 
-(export exprcad-filter-planar-faces)
+(export filter-planar-faces)
 
-(export exprcad-filter-aligned-faces)
+(export filter-aligned-faces)
 
-(export exprcad-filter-edges-of-face)
+(export filter-edges-of-face)
 
-(export exprcad-filter-parallel-linear-edges)
+(export filter-parallel-linear-edges)

@@ -16,7 +16,7 @@
           (string-append "Resource not found: "
                          (uri->string (request-uri request)))))
 
-(define initial-code "(use-modules (exprcad))\n\n(exprcad-export-glb-file \"model.glb\" (exprcad-sphere 1.0))\n")
+(define initial-code "(use-modules ((exprcad) #:prefix exprcad:))\n\n(exprcad:export-glb-file \"model.glb\" (exprcad:sphere 1.0))\n")
 
 (unless (file-exists? "model.scm")
   (call-with-output-file "model.scm"
