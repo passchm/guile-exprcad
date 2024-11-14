@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+            html
+            {
+                  box-sizing: border-box;
+            }
+
+            *, *:before, *:after
+            {
+                  box-sizing: inherit;
+            }
+
+            body
+            {
+                margin: 0;
+                padding: 0;
+            }
+
+            .container
+            {
+                display: flex;
+                height: 90vh;
+            }
+
+            .editor
+            {
+                flex: 1;
+                height: 100%;
+            }
+
+            .editor .editor-box
+            {
+                height: 100%;
+            }
+
+            .viewer
+            {
+                flex: 1;
+                height: 100%;
+                justify-content: center;
+            }
+
+            .viewer iframe
+            {
+                width: 100%;
+                height: 100%;
+
+                border: none;
+            }
+
+            .toolbar, .editor, .viewer
+            {
+                border: 1px solid gray;
+            }
+        </style>
+        <template id="viewer-page-template">
+            <html lang="en-US">
+                <head>
+                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1" />
+                    <style>
+                        html
+                        {
+                              box-sizing: border-box;
+                        }
+
+                        *, *:before, *:after
+                        {
+                              box-sizing: inherit;
+                        }
+
+                        body
+                        {
+                            margin: 0;
+                            padding: 0;
+
+                            width: 100vw;
+                            height: 100vh;
+                        }
+
+                        model-viewer
+                        {
+                            width: 100%;
+                            height: 100%;
+                        }
+                    </style>
+                    <script
+                        type="module"
+                        async="async"
+                        src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"
+                        integrity="sha256-d07doh4b4qCTTkYMpZQ68f4/iNoTCp+YvWqdYRV2ys8="
+                        crossorigin="anonymous"
+                    >
+                    </script>
+                </head>
+                <body>
+                    <model-viewer camera-controls="camera-controls" src="/model.glb"></model-viewer>
+                </body>
+            </html>
+        </template>
+        <link
+            rel="modulepreload"
+            href="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/+esm"
+            integrity="sha256-a+2Fyt8z50Q1tl2eumBJwCMstQrs5uxbUjOTnkxUyZg="
+            crossorigin="anonymous"
+        />
+        <script type="module" async="async">
+            import * as monaco from "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/+esm";
+
+            async function createViewer() {
+                // The approach with the iframe is needed because model-viewer does not support XHTML5.
+
+                const viewerPageTemplate = document.getElementById("viewer-page-template").content;
+                const viewerPageCode = "&lt;!DOCTYPE html&gt;\n" + (new XMLSerializer().serializeToString(viewerPageTemplate));
+
+                const iframe = document.createElement("iframe");
+                iframe.srcdoc = viewerPageCode;
+                document.querySelector(".viewer").append(iframe);
+            }
+
+            async function updateViewer() {
+                if (!document.querySelector(".viewer iframe")) {
+                    await createViewer();
+                }
+
+                document.querySelector(".viewer iframe").contentWindow.location.reload();
+            }
+
+            async function saveCode() {
+                const code = editor.getValue();
+                await fetch("/model.scm", {
+                    method: "PUT",
+                    body: code,
+                });
+            }
+
+            const initialCode = await ((await fetch("/model.scm")).text());
+
+            const editor = monaco.editor.create(document.querySelector(".editor-box"), {
+                // value: "(display \"hello world\")\n(newline)\n",
+                value: initialCode,
+                language: "scheme",
+            });
+
+            document.querySelector(".toolbar .save-button").addEventListener("click", async () => {
+                await saveCode();
+            });
+
+            document.querySelector(".toolbar .run-button").addEventListener("click", async () => {
+                await saveCode();
+
+                await fetch("/run", {
+                    method: "POST",
+                });
+
+                await updateViewer();
+            });
+        </script>
+    </head>
+    <body>
+        <div class="toolbar">
+            <button class="save-button">Save</button>
+            <button class="run-button">Save and run</button>
+        </div>
+        <div class="container">
+            <div class="editor">
+                <div class="editor-box"></div>
+            </div>
+            <div class="viewer"></div>
+        </div>
+    </body>
+</html>
