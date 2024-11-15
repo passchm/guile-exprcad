@@ -91,6 +91,10 @@
 
 (export export-ascii-stl-file)
 
+(export import-step-file)
+
+(export import-stl-file)
+
 (export count-faces)
 
 (export count-edges)

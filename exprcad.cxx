@@ -58,6 +58,7 @@ extern "C"
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 
 #include <STEPControl_Writer.hxx>
+#include <STEPControl_Reader.hxx>
 
 #include <StepData_Protocol.hxx>
 #include <StepData_StepModel.hxx>
@@ -72,6 +73,7 @@ extern "C"
 #include <RWGltf_CafWriter.hxx>
 
 #include <StlAPI_Writer.hxx>
+#include <StlAPI_Reader.hxx>
 
 
 #include <cassert>
@@ -553,6 +555,46 @@ EXPRCAD_DEFINE(exprcad_export_ascii_stl_file, 2, 0, 0, (SCM filename, SCM shape)
     scm_remember_upto_here_1(shape);
 
     return SCM_BOOL_T;
+}
+
+EXPRCAD_DEFINE(exprcad_import_step_file, 1, 0, 0, (SCM filename))
+{
+    char *the_filename = scm_to_locale_string(filename);
+
+    STEPControl_Reader reader;
+    if (reader.ReadFile(the_filename) != IFSelect_RetDone) {
+        return SCM_BOOL_F;
+    }
+
+    reader.TransferRoots();
+
+    const TopoDS_Shape &result_shape = reader.OneShape();
+
+    free(the_filename);
+
+    assert((!result_shape.IsNull()));
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        new TopoDS_Shape(result_shape)
+    );
+}
+
+EXPRCAD_DEFINE(exprcad_import_stl_file, 1, 0, 0, (SCM filename))
+{
+    char *the_filename = scm_to_locale_string(filename);
+
+    StlAPI_Reader reader;
+    TopoDS_Shape read_shape;
+
+    assert((reader.Read(read_shape, the_filename)));
+
+    free(the_filename);
+
+    return scm_make_foreign_object_1(
+        exprcad_type_shape,
+        new TopoDS_Shape(read_shape)
+    );
 }
 
 SCM
