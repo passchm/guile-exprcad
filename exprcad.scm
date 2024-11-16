@@ -89,7 +89,7 @@
 
 (export export-glb-file)
 
-(export export-ascii-stl-file)
+(export export-stl-file)
 
 (export import-step-file)
 

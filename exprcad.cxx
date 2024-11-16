@@ -538,7 +538,7 @@ EXPRCAD_DEFINE(exprcad_export_glb_file, 2, 0, 0, (SCM filename, SCM shape))
     return result;
 }
 
-EXPRCAD_DEFINE(exprcad_export_ascii_stl_file, 2, 0, 0, (SCM filename, SCM shape))
+EXPRCAD_DEFINE(exprcad_export_stl_file, 2, 0, 0, (SCM filename, SCM shape))
 {
     scm_assert_foreign_object_type(exprcad_type_shape, shape);
     TopoDS_Shape &the_shape = *static_cast<TopoDS_Shape *>(scm_foreign_object_ref(shape, 0));
@@ -548,6 +548,10 @@ EXPRCAD_DEFINE(exprcad_export_ascii_stl_file, 2, 0, 0, (SCM filename, SCM shape)
     BRepMesh_IncrementalMesh mesh(the_shape, 1e-3);
 
     StlAPI_Writer writer;
+
+    // https://theorangeduck.com/page/atoi-trillions-whales
+    writer.ASCIIMode() = false;
+
     writer.Write(the_shape, the_filename);
 
     free(the_filename);
